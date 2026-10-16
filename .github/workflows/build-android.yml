@@ -42,9 +42,54 @@ jobs:
         run: npx cap sync android
 
       - name: 配置 Android SDK 并接受许可
-        uses: android-actions/setup-android@v3
-        with:
-          accept-android-sdk-licenses: true
+        env:
+          ANDROID_HOME: ${{ github.workspace }}/android-sdk
+          ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
+        run: |
+          set -euo pipefail
+          SDK=$ANDROID_HOME
+          mkdir -p "$SDK/cmdline-tools"
+          echo "下载 command-line tools ..."
+          curl -fsSL --retry 3 -o /tmp/cmdtools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip -q /tmp/cmdtools.zip -d "$SDK/cmdline-tools"
+          mv "$SDK/cmdline-tools/cmdline-tools" "$SDK/cmdline-tools/latest"
+          export PATH="$SDK/cmdline-tools/latest/bin:$PATH"
+          set +e
+          yes | sdkmanager --sdk_root="$SDK" --licenses
+          SDKMANAGER_STATUS=${PIPESTATUS[1]}
+          set -e
+          if [ "$SDKMANAGER_STATUS" -ne 0 ]; then
+            exit "$SDKMANAGER_STATUS"
+          fi
+
+          # 从 npx cap add 生成的工程读取真实 compileSdk / targetSdk / buildToolsVersion
+          # （不假设具体 API 级别，也不依赖 Capacitor 默认值）
+          BUILD_GRADLE="$PWD/android/app/build.gradle"
+          VARIABLES_GRADLE="$PWD/android/variables.gradle"
+          if [ ! -f "$BUILD_GRADLE" ]; then
+            echo "::error::未找到 $BUILD_GRADLE，无法确认所需 SDK 版本"
+            exit 1
+          fi
+          API=$(sed -nE "s/^[[:space:]]*compileSdk[[:space:]]*(=|[[:space:]])[[:space:]]*[\"']?([0-9]+).*/\2/p" "$BUILD_GRADLE" | head -n1 || true)
+          TARGET=$(sed -nE "s/^[[:space:]]*targetSdkVersion[[:space:]]*(=|[[:space:]])[[:space:]]*[\"']?([0-9]+).*/\2/p" "$BUILD_GRADLE" | head -n1 || true)
+          BT=$(sed -nE "s/^[[:space:]]*buildToolsVersion[[:space:]]*(=|[[:space:]])[[:space:]]*[\"']?([0-9]+\.[0-9]+\.[0-9]+).*/\2/p" "$BUILD_GRADLE" | head -n1 || true)
+          if [ -f "$VARIABLES_GRADLE" ]; then
+            [ -z "$API" ] && API=$(sed -nE "s/^[[:space:]]*compileSdkVersion[[:space:]]*=[[:space:]]*([0-9]+).*/\1/p" "$VARIABLES_GRADLE" | head -n1 || true)
+            [ -z "$TARGET" ] && TARGET=$(sed -nE "s/^[[:space:]]*targetSdkVersion[[:space:]]*=[[:space:]]*([0-9]+).*/\1/p" "$VARIABLES_GRADLE" | head -n1 || true)
+            [ -z "$BT" ] && BT=$(sed -nE "s/^[[:space:]]*buildToolsVersion[[:space:]]*=[[:space:]]*[\"']([^\"']+)[\"'].*/\1/p" "$VARIABLES_GRADLE" | head -n1 || true)
+          fi
+          if [ -z "$API" ]; then
+            echo "::error::无法从 $BUILD_GRADLE 或 $VARIABLES_GRADLE 解析 compileSdk/compileSdkVersion"
+            exit 1
+          fi
+          echo "检测到 compileSdk/targetSdk=$API, buildToolsVersion=${BT:-Gradle/AGP 默认}"
+          SDK_PACKAGES=("platform-tools" "platforms;android-${API}")
+          [ -n "$BT" ] && SDK_PACKAGES+=("build-tools;${BT}")
+          sdkmanager --sdk_root="$SDK" "${SDK_PACKAGES[@]}"
+
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
+          echo "$SDK/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
 
       - name: 赋予 gradlew 执行权限
         run: chmod +x android/gradlew
