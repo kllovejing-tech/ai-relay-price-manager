@@ -1,7 +1,7 @@
 {
   "appId": "com.codex.airelayprices",
   "appName": "AI 中转站价格管理",
-  "webDir": ".",
+  "webDir": "www",
   "bundledWebRuntime": false,
   "server": {
     "androidScheme": "https"

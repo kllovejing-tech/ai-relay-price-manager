@@ -15,3 +15,6 @@ local.properties
 *.apk
 captures/
 .externalNativeBuild/
+# Capacitor 构建期生成的 web 资源目录
+www/
+
