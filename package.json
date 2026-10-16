@@ -1,0 +1,17 @@
+{
+  "name": "ai-relay-price-manager",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "离线 AI 中转站价格管理 App",
+  "scripts": {
+    "dev": "npx serve .",
+    "build:web": "node scripts/verify.cjs",
+    "test": "node --test tests/*.test.js"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.4.3",
+    "@capacitor/cli": "^7.4.3",
+    "@capacitor/core": "^7.4.3"
+  }
+}
