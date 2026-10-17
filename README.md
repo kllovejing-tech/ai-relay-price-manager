@@ -79,4 +79,4 @@ Android 构建由 GitHub Actions 执行，不依赖本机的 Android 工程、JD
 
 ## 许可证
 
-当前仓库尚未附带开源许可证。正式公开前需要先确定许可证类型并补充对应文件。
+本项目采用 [MIT License](LICENSE)。完整许可证文本见根目录的 [`LICENSE`](LICENSE) 文件。
