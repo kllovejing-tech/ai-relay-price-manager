@@ -29,7 +29,7 @@ body { margin: 0; background: var(--bg); color: var(--text); font-family: system
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
 .app-shell { min-height: 100vh; padding-bottom: 76px; }
-.topbar { position: sticky; top: 0; z-index: 4; display: flex; align-items: center; justify-content: space-between; padding: 18px 18px 14px; background: color-mix(in srgb, var(--bg) 93%, transparent); backdrop-filter: blur(16px); border-bottom: 1px solid var(--line); }
+.topbar { position: sticky; top: 0; z-index: 4; display: flex; align-items: center; justify-content: space-between; padding: 24px 18px 14px; padding-top: max(24px, calc(18px + env(safe-area-inset-top, 0px))); background: color-mix(in srgb, var(--bg) 93%, transparent); backdrop-filter: blur(16px); border-bottom: 1px solid var(--line); }
 .eyebrow { margin: 0 0 3px; color: var(--primary); font-size: 12px; font-weight: 700; letter-spacing: .04em; }
 h1 { margin: 0; font-size: 20px; }
 h2 { margin: 0; font-size: 20px; }
@@ -54,6 +54,24 @@ h3 { margin: 0; font-size: 16px; }
 .list-card .row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .list-card .meta { color: var(--muted); font-size: 12px; line-height: 1.6; }
 .list-card .title { font-weight: 750; }
+.ranking-table { --ranking-columns: minmax(0, 1.35fr) minmax(74px, .9fr) minmax(74px, .9fr); display: grid; gap: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.ranking-table-header, .ranking-row { display: grid; grid-template-columns: var(--ranking-columns); align-items: center; }
+.ranking-table-header { padding: 6px 7px; background: var(--surface-2); border-bottom: 1px solid var(--line); color: var(--muted); font-size: 11px; font-weight: 700; line-height: 1.2; }
+.ranking-row { min-height: 48px; gap: 8px; padding: 5px 7px; border-bottom: 1px solid var(--line); }
+.ranking-currency { grid-column: 1 / -1; padding: 5px 7px 3px; background: var(--bg); border-bottom: 1px solid var(--line); color: var(--muted); font-size: 11px; line-height: 1.2; }
+.ranking-identity, .ranking-price { min-width: 0; }
+.ranking-identity { display: grid; gap: 3px; }
+.ranking-name { display: flex; align-items: flex-start; min-width: 0; gap: 5px; }
+.ranking-rank { flex: 0 0 18px; color: var(--muted); font-size: 11px; line-height: 1.35; text-align: right; }
+.ranking-label { display: grid; min-width: 0; gap: 1px; }
+.ranking-label strong { overflow-wrap: anywhere; font-size: 12px; line-height: 1.25; }
+.ranking-label small, .ranking-price small { color: var(--muted); font-size: 10px; line-height: 1.2; }
+.ranking-label small { overflow-wrap: anywhere; }
+.ranking-actions { display: flex; gap: 4px; padding-left: 23px; }
+.ranking-action { padding: 2px 5px; border-radius: 6px; font-size: 10px; line-height: 1.2; }
+.ranking-price { display: grid; align-content: center; gap: 2px; }
+.ranking-price strong { overflow: hidden; font-size: 12px; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+.ranking-price small { overflow-wrap: anywhere; }
 .badge-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .badge { padding: 3px 8px; border-radius: 999px; background: var(--surface-2); color: var(--primary-strong); font-size: 12px; }
 .price-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 11px; }
@@ -80,6 +98,14 @@ textarea { min-height: 76px; resize: vertical; }
 .dialog-body { padding: 16px; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
 .notice { padding: 10px 12px; border-radius: 9px; background: var(--surface-2); color: var(--muted); font-size: 13px; line-height: 1.5; }
+.about-panel { margin-bottom: 8px; }
+.about-row { display: grid; gap: 4px; padding: 8px 0; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+.about-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.about-row strong { color: var(--text); font-size: 13px; }
+.about-link { color: var(--primary); font-size: 12px; overflow-wrap: anywhere; }
+.about-qq-row { display: flex; align-items: center; gap: 8px; }
+.about-qq-row input { min-width: 0; flex: 1 1 auto; }
+.about-copy-button { flex: 0 0 auto; }
 .toast { position: fixed; left: 50%; bottom: 88px; z-index: 9; max-width: calc(100vw - 32px); transform: translate(-50%, 20px); opacity: 0; pointer-events: none; padding: 10px 14px; border-radius: 9px; background: #173b38; color: white; font-size: 13px; transition: .2s ease; }
 .toast.show { transform: translate(-50%, 0); opacity: 1; }
 .muted-number { color: var(--muted); }

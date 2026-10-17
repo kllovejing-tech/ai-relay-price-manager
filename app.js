@@ -113,11 +113,35 @@ function homeView(view) {
 }
 
 function currencyHeader(c) {
-  return `<div class="subtle" style="margin:10px 2px 2px">币种：${esc(c)}</div>`;
+  return `<div class="ranking-currency">币种：${esc(c)}</div>`;
+}
+
+function rankingRow(m, rank) {
+  const station = state.stations.find(s => s.id === m.stationId);
+  const prices = m.prices || {};
+  const currency = prices.currency || 'USD';
+  return `<div class="ranking-row">
+    <div class="ranking-identity">
+      <div class="ranking-name">
+        <span class="ranking-rank">${rank}</span>
+        <div class="ranking-label">
+          <strong>${esc(station ? station.name : '未关联中转站')}</strong>
+          <small>${esc(m.name)} · ${esc(currency)}</small>
+        </div>
+      </div>
+      <div class="ranking-actions">
+        <button class="secondary-button ranking-action" data-action="edit-model" data-id="${esc(m.id)}">编辑</button>
+        <button class="danger-button ranking-action" data-action="delete-model" data-id="${esc(m.id)}">删除</button>
+      </div>
+    </div>
+    <div class="ranking-price"><strong>${fmt(prices.input, currency)}</strong><small>缓存读取 ${fmt(prices.cacheRead, currency)}</small></div>
+    <div class="ranking-price"><strong>${fmt(prices.output, currency)}</strong><small>缓存写入 ${fmt(prices.cacheWrite, currency)}</small></div>
+  </div>`;
 }
 
 function rankingView(view) {
   const rows = sortQuotes(state.models, rankingMetric, rankingDir);
+  let rank = 0;
   view.innerHTML = `
     <div class="section-heading"><h2>价格排行</h2></div>
     <div class="toolbar">
@@ -131,7 +155,10 @@ function rankingView(view) {
       <span></span>
     </div>
     ${state.models.length
-      ? `<div class="list">${rows.map(r => (r.header ? currencyHeader(r.currency) : modelCard(r))).join('')}</div>`
+      ? `<div class="ranking-table">
+          <div class="ranking-table-header"><span>站点 / 模型</span><span>输入价格</span><span>输出价格</span></div>
+          ${rows.map(r => (r.header ? currencyHeader(r.currency) : rankingRow(r, ++rank))).join('')}
+        </div>`
       : `<div class="empty">暂无模型数据。</div>`}
   `;
 }
@@ -228,9 +255,63 @@ function usageView(view) {
   `;
 }
 
+function addStation() {
+  const input = document.querySelector('[data-station-name]');
+  const name = String(input?.value || '').trim();
+  if (!name) {
+    toast('请填写中转站名称');
+    input?.focus();
+    return;
+  }
+  if (state.stations.some(station => station.name.trim() === name)) {
+    toast('已存在同名中转站');
+    return;
+  }
+  state.stations.push({ id: uid(), name });
+  save();
+  render();
+  toast('中转站已添加');
+}
+
+async function copyAuthorQq() {
+  const value = '2698377170';
+  const input = document.querySelector('[data-author-qq]');
+  try {
+    if (globalThis.navigator?.clipboard?.writeText) {
+      await globalThis.navigator.clipboard.writeText(value);
+    } else {
+      const helper = document.createElement('textarea');
+      helper.value = value;
+      helper.setAttribute('readonly', '');
+      helper.style.position = 'fixed';
+      helper.style.opacity = '0';
+      document.body.appendChild(helper);
+      helper.select();
+      const copied = document.execCommand && document.execCommand('copy');
+      helper.remove();
+      if (!copied) throw new Error('copy failed');
+    }
+    toast('QQ号已复制');
+  } catch {
+    input?.focus();
+    input?.select();
+    toast('复制失败，请手动选择 QQ 号');
+  }
+}
+
 function settingsView(view) {
   view.innerHTML = `
     <div class="section-heading"><h2>设置</h2></div>
+    <div class="panel">
+      <div class="section-heading"><h3>中转站管理</h3></div>
+      <div class="toolbar-inline">
+        <input data-station-name aria-label="中转站名称" placeholder="输入中转站名称">
+        <button type="button" class="primary-button" data-action="add-station">添加</button>
+      </div>
+      <p class="subtle">${state.stations.length
+        ? `已有：${state.stations.map(station => esc(station.name)).join('、')}`
+        : '暂无中转站'}</p>
+    </div>
     <div class="panel">
       <div class="section-heading"><h3>外观</h3><button class="secondary-button fit" data-action="toggle-theme">切换主题</button></div>
       <p class="subtle">当前主题：${state.settings.theme === 'dark' ? '深色' : '浅色'}。也可点击右上角图标切换。</p>
@@ -248,6 +329,12 @@ function settingsView(view) {
     </div>
     <div class="panel">
       <div class="section-heading"><h3>危险操作</h3><button class="danger-button fit" data-action="clear">清空全部数据</button></div>
+    </div>
+    <div class="panel about-panel">
+      <div class="section-heading"><h3>关于本项目</h3></div>
+      <div class="about-row"><span>项目名称</span><strong>AI 中转站价格管理</strong></div>
+      <div class="about-row"><span>GitHub 项目主页</span><a class="about-link" href="https://github.com/kllovejing-tech/ai-relay-price-manager" target="_blank" rel="noopener noreferrer">https://github.com/kllovejing-tech/ai-relay-price-manager</a></div>
+      <div class="about-row"><span>作者 QQ</span><div class="about-qq-row"><input data-author-qq value="2698377170" readonly aria-label="作者 QQ"><button type="button" class="secondary-button about-copy-button" data-action="copy-author-qq">复制</button></div></div>
     </div>`;
 }
 
@@ -478,6 +565,8 @@ function clearAll() {
 function handleAction(action, id) {
   switch (action) {
     case 'toggle-theme': toggleTheme(); break;
+    case 'add-station': addStation(); break;
+    case 'copy-author-qq': copyAuthorQq(); break;
     case 'add-model': modelEditor(); break;
     case 'edit-model': modelEditor(state.models.find(m => m.id === id)); break;
     case 'delete-model': deleteModel(id); break;
